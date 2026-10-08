@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "retro",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-10-07",
+  "workers_dev": true,
+  "preview_urls": false,
+  "assets": {
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "single-page-application"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "TEAM_RETRO",
+        "class_name": "TeamRetro"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["TeamRetro"]
+    }
+  ],
+  "vars": {
+    "TEAM_OBJECT_NAME": "team-v1"
+  }
+}

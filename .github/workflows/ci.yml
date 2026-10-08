@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Typecheck, lint, tests, and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TMPDIR: ${{ github.workspace }}/.tmp
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.cache/ms-playwright
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22.12.0
+
+      - name: Prepare workspace-local caches and temporary files
+        run: mkdir -p "$GITHUB_WORKSPACE/.cache/npm" "$GITHUB_WORKSPACE/.cache/ms-playwright" "$GITHUB_WORKSPACE/.tmp"
+
+      - name: Install locked dependencies
+        run: npm ci --cache "$GITHUB_WORKSPACE/.cache/npm"
+
+      - name: Install Chromium in the workspace
+        run: npx playwright install chromium
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit and Worker runtime tests
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+      - name: Browser end-to-end tests
+        run: npm run test:e2e

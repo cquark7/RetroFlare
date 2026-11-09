@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest an improvement to the retrospective workflow.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for sharing an idea! Search existing issues first and describe the team need, not just a proposed implementation.
+        For substantial work, agree on the approach here before opening a pull request.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe the retrospective workflow or user need. Use fictional examples, not private team data.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed improvement
+      description: What would a useful outcome look like?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or workarounds
+      description: Optional. What have you tried, and why is it not enough?
+  - type: textarea
+    id: contribution
+    attributes:
+      label: Would you like to help?
+      description: Optional. Design feedback, documentation, testing, and implementation are all welcome.

@@ -1,0 +1,45 @@
+name: Bug report
+description: Report something that is not working as expected.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve RetroFlare! Search existing issues first.
+        For security vulnerabilities, use [private reporting](https://github.com/cquark7/RetroFlare/security/advisories/new), not this form.
+        Use fictional data. Remove tokens, cookies, deployment settings, and real retrospective content from screenshots and logs.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Describe the problem and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Include the smallest repeatable sequence and whether another browser or participant is needed.
+      placeholder: |
+        1. Start a new retro...
+        2. Open it in a second browser...
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser/version, operating system, and local development or Cloudflare deployment.
+      placeholder: Chrome 140, macOS, local development
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Commit or version
+      description: The commit SHA or version you are running, if known.
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Screenshots or sanitized diagnostics
+      description: Optional. Include visible error messages or request IDs, but no credentials or private team data.

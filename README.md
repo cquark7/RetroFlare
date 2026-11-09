@@ -1,53 +1,85 @@
 # RetroFlare
 
-RetroFlare is a self-hosted, real-time retrospective app built with React and Cloudflare Workers. Create a board with **Went Well**, **Could Improve**, and **Shoutouts** columns, react to notes, and capture action items. Finished retros remain available as read-only history, with JSON backup and import.
+<p align="center">
+  <a href="https://github.com/cquark7/RetroFlare/actions/workflows/ci.yml"><img src="https://github.com/cquark7/RetroFlare/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2f765d.svg" alt="MIT License"></a>
+</p>
 
-## Cloudflare free tier
+**A self-hosted, real-time retrospective app for teams that want to celebrate what worked, talk honestly about what didn’t, and leave with a plan.**
 
-RetroFlare runs on Workers with a SQLite-backed Durable Object for shared state and WebSockets, and uses Cloudflare Access for sign-in. A small team can run it on Cloudflare's free plans without a custom domain. The Zero Trust free plan currently covers up to 50 users; Workers and Durable Objects are subject to [Workers limits](https://developers.cloudflare.com/workers/platform/limits/) and [Durable Objects limits](https://developers.cloudflare.com/durable-objects/platform/pricing/). Check current limits and your account's plan: free-tier limits can interrupt service, and paid plans may incur charges. GIPHY is optional and has its own terms and limits.
+![RetroFlare demo: teammates add retrospective notes, react, and turn discussion into action](assets/retroflare-demo.gif)
+
+RetroFlare gives your team a shared board with **Went Well**, **Could Improve**, and **Shoutouts** columns. Add reactions as ideas come in, then capture next steps as owned action items. Collaborate live, finish a retro, and keep a read-only history for next time.
+
+## What you can do
+
+- **Reflect together:** Live boards, participant presence, and autosaved notes make it easy to contribute from separate browsers.
+- **Find the signal:** React to ideas and turn the conversation into action items with owners.
+- **Keep the learning:** Finish a retro to preserve its history; export and import JSON backups when you need to move or restore data.
+- **Make it yours:** Optional GIF search and local, opt-in focus music. GIF search is off unless you configure a GIPHY key.
+- **Run your own instance:** Deploy the app and its SQLite-backed Durable Object to your Cloudflare account; there is no RetroFlare-hosted service to depend on.
+
+<details>
+  <summary>View board and action-item screenshots</summary>
+  <br>
+  <img src="assets/screenshot-board.png" alt="RetroFlare board with Went Well, Could Improve, and Shoutouts columns, notes, and reactions">
+  <br><br>
+  <img src="assets/screenshot-actions.png" alt="RetroFlare action items with owners, shown over a live retrospective board">
+</details>
 
 ## Run locally
 
-Requires Node.js 22.12.0 or newer and npm.
+Requires **Node.js 22.12+** and npm.
 
 ```sh
+git clone https://github.com/cquark7/RetroFlare.git
+cd RetroFlare
 npm ci --cache .cache/npm
 npm run dev
 ```
 
-Open <http://localhost:5173>. Local development uses demo identities and local Worker storage; it does not use your Cloudflare account. To enable GIF search locally, add `VITE_GIPHY_API_KEY=your-web-sdk-key` to an untracked `.env.local` file and restart the server. The rest of the app works without it.
+Open <http://localhost:5173>. Local development uses demo identities and local Worker storage; it does not connect to a Cloudflare account. To enable GIF search during development, put `VITE_GIPHY_API_KEY=your-web-sdk-key` in an untracked `.env.local` file and restart the server. The rest of the app works without it.
 
-## Deploy to Cloudflare
+## Deploy your own instance
 
-You need a Cloudflare account with Workers and Zero Trust enabled and a hostname for the app. The default `workers.dev` subdomain works; a custom domain is optional. A [GIPHY Web SDK key](https://developers.giphy.com/) is optional; without one, GIF search is disabled.
+RetroFlare runs as a Cloudflare Worker with a SQLite-backed Durable Object for shared state and WebSockets. Sign-in is handled by Cloudflare Access. A custom domain is optional; the default `workers.dev` hostname works.
 
-1. Choose a Worker name and the hostname users will open. For the default `workers.dev` hostname, use `retroflare.<your-subdomain>.workers.dev`. **Choose a name not used by another Worker**: deploying to an existing name updates that Worker. If you already deployed this app, keep its existing Worker name to retain its data.
-2. In Zero Trust, create a **hostname-based self-hosted Access application** for the entire Worker hostname, including its API and WebSocket routes. Add an Allow policy for the intended users. All allowed users must also have an email address in the single domain configured below. Use hostname-based Access, not Worker-level Access: [Worker-level Access does not support WebSocket upgrades](https://developers.cloudflare.com/workers/configuration/cloudflare-access/#protect-one-worker).
-3. Copy the settings template and fill it in:
+1. **Choose a Worker name and hostname.** For example, `retroflare.<your-subdomain>.workers.dev`. Use a new name for a new instance; if you already run RetroFlare, keep its current Worker name to retain that instance's data.
+2. **Protect the hostname with Access.** Create a hostname-based self-hosted Access application covering the full hostname, including API and WebSocket requests, and allow the intended users. Worker-level Access protection does not support WebSocket upgrades, so use hostname-based protection for this app. See [Cloudflare's Access guidance for Workers](https://developers.cloudflare.com/workers/configuration/cloudflare-access/).
+3. **Create a local deployment settings file:**
 
    ```sh
    mkdir -p .tmp
    cp deployment.example.vars .tmp/deployment.vars
    ```
 
-   - `WORKER_NAME`: the name chosen in step 1.
-   - `APP_ORIGIN`: the exact HTTPS origin, for example `https://retroflare.<your-subdomain>.workers.dev` or your custom domain (no trailing slash).
-   - `ALLOWED_EMAIL_DOMAIN`: the single allowed email domain, such as `example.com`.
-   - `ACCESS_TEAM_ISSUER`: your Zero Trust team domain, including `https://`, such as `https://<team>.cloudflareaccess.com`.
-   - `ACCESS_AUD`: the application's [Audience (AUD) tag](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/#get-your-aud-tag).
-   - `ADMIN_EMAILS`: optional comma-separated email addresses allowed to import backups and use administrator recovery controls.
-   - `VITE_GIPHY_API_KEY`: optional GIPHY Web SDK key. Leave empty to disable GIF search. This client key is included in the browser bundle; it is not a Worker secret.
+   Set the values in `.tmp/deployment.vars`:
 
-4. Install dependencies (`npm ci --cache .cache/npm`), authenticate, and deploy:
+   | Setting | What to enter |
+   | --- | --- |
+   | `WORKER_NAME` | The Worker name from step 1. |
+   | `APP_ORIGIN` | Exact HTTPS origin, e.g. `https://retroflare.<your-subdomain>.workers.dev`, with no trailing slash. |
+   | `ALLOWED_EMAIL_DOMAIN` | The email domain allowed by the Worker, such as `example.com`; configure the Access policy separately. |
+   | `ACCESS_TEAM_ISSUER` | Your Zero Trust team issuer, such as `https://<team>.cloudflareaccess.com`. |
+   | `ACCESS_AUD` | The Access application's [Audience (AUD) tag](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/#get-your-aud-tag). |
+   | `ADMIN_EMAILS` | Optional comma-separated addresses allowed to import backups and use administrator recovery controls. |
+   | `VITE_GIPHY_API_KEY` | Optional [GIPHY Web SDK key](https://developers.giphy.com/). Leave empty to disable GIF search. This client key is included in the browser bundle; it is not a Worker secret. |
+
+4. **Install, authenticate, and deploy:**
 
    ```sh
+   npm ci --cache .cache/npm
    npx wrangler login
    npm run deploy
    ```
 
-The script builds and deploys the Worker; it does not create the Access application. Confirm the Access policy covers the entire hostname before sharing it. The Worker fails closed if its Access settings are missing or invalid. Keep `.tmp/deployment.vars` and backups out of Git: backups contain your team's retrospective data.
+The deploy script builds and deploys the Worker; it does not create the Access application. Verify that Access covers the full hostname before inviting users. The Worker fails closed if its Access configuration is missing or invalid. Keep `.tmp/deployment.vars` and exported backups out of Git; backups may contain retrospective data.
 
-## Contributing and tests
+Cloudflare's free plans may be enough for a small team, but Workers, Durable Objects, and Access have plan-specific limits that can change. Check the current [Workers limits](https://developers.cloudflare.com/workers/platform/limits/), [Durable Objects limits](https://developers.cloudflare.com/durable-objects/platform/limits/), and your account's pricing before deploying. Usage beyond included quotas may incur charges.
+
+## Contributing
+
+Bug reports, ideas, and pull requests are welcome. For a larger change, open an [issue](https://github.com/cquark7/RetroFlare/issues) first so we can agree on the approach. Before opening a pull request, run the same checks used in CI:
 
 ```sh
 npm run typecheck
@@ -58,8 +90,8 @@ PLAYWRIGHT_BROWSERS_PATH=.cache/ms-playwright npx playwright install chromium
 npm run test:e2e
 ```
 
-The browser suite starts its own local server and uses isolated, nonpersistent data. See [browser test notes](tests/e2e/README.md) for details.
+The browser suite starts its own isolated server. See [browser test notes](tests/e2e/README.md) for coverage and local test boundaries.
 
 ## License and credits
 
-The project source is available under the [MIT License](LICENSE). Bundled fonts use the [SIL Open Font License](src/client/fonts/OFL.txt); bundled music is provided under CC0, with sources listed in the [music credits](public/music/CREDITS.md).
+RetroFlare is available under the [MIT License](LICENSE). Bundled fonts use the [SIL Open Font License](src/client/fonts/OFL.txt); bundled music is CC0, with sources and details in the [music credits](public/music/CREDITS.md).
